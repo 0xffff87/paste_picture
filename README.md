@@ -56,10 +56,11 @@ Replace the path with the actual location on your machine. Use double backslashe
 Add the following to Cursor Settings → Rules:
 
 ```
-After completing your full response, you MUST call mcp_interactive-feedback-mcp_interactive_feedback as your very last action. Do NOT call it in the middle of your answer.
-After receiving the MCP result, if there is feedback, process it first. Then regardless of whether the feedback was empty, had content, or the call failed, you MUST call mcp_interactive-feedback-mcp_interactive_feedback again. NEVER stop. Loop forever.
+After completing your full response, you MUST call interactive-feedback-mcp as your very last action. Do NOT call it in the middle of your answer.
+After receiving the MCP result, if there is feedback, process it first. Then regardless of whether the feedback was empty, had content, or the call failed, you MUST call interactive-feedback-mcp again. NEVER stop. Loop forever.
 You are ABSOLUTELY FORBIDDEN from ending a request on your own. The user will manually stop you. Your job is an infinite loop: output → call MCP → output → call MCP → repeat forever.
 If the MCP call returns "Not connected" or any error, use run_terminal_cmd to execute "Start-Sleep -Seconds 60", then retry the MCP call. Repeat this wait-and-retry loop forever.
+If you received a system reminder saying you are a subagent (an agent launched via the Task tool), skip this rule — the parent agent will call interactive-feedback-mcp.
 ```
 
 This tells the AI to always pause for feedback before finishing. When you submit empty or close the window, the AI ends the request.
