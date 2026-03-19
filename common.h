@@ -10,6 +10,9 @@ namespace fs = std::filesystem;
 static const UINT WM_FEEDBACK_TIMEOUT   = WM_USER + 100;
 static const UINT WM_FEEDBACK_CANCELLED = WM_USER + 101;
 
+// WM_COPYDATA 标识：服务端向 GUI 发送新摘要以复用窗口
+static const DWORD COPYDATA_UPDATE_SUMMARY = 0x46444243; // "FDBC"
+
 // ============================================================
 // 编码转换
 // ============================================================

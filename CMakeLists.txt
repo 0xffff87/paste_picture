@@ -11,13 +11,14 @@ add_compile_options(/utf-8)
 add_compile_definitions(UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 
 add_executable(feedback-server server.cpp)
+target_link_libraries(feedback-server PRIVATE crypt32)
 
 add_executable(feedback feedback.cpp)
 target_link_libraries(feedback PRIVATE shell32)
 
 add_executable(feedback-gui gui.cpp)
 set_target_properties(feedback-gui PROPERTIES WIN32_EXECUTABLE TRUE)
-target_link_libraries(feedback-gui PRIVATE user32 gdi32 shell32 comctl32)
+target_link_libraries(feedback-gui PRIVATE user32 gdi32 shell32 comctl32 gdiplus)
 target_link_options(feedback-gui PRIVATE
     "/MANIFESTDEPENDENCY:type='win32' \
 name='Microsoft.Windows.Common-Controls' \
