@@ -1,4 +1,8 @@
 .cursor/
 build/
 *.exe
+*.zip
 feedback_log.txt
+interactive-feedback-mcp
+auto_reply_loop.txt
+auto_reply_oneshot.txt

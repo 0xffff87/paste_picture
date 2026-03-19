@@ -123,6 +123,8 @@ static void submit_and_close()
             for (auto& p : g.images)
                 img_out << p.u8string() << "\n";
         }
+        // 清空列表，防止 WM_DESTROY 删除已提交的图片文件（服务端还需要读取）
+        g.images.clear();
     }
 
     DestroyWindow(g.hwnd_main);
