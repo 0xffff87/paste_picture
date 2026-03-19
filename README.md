@@ -11,8 +11,10 @@ Cursor bills by request (limited monthly). Without this tool, each round of feed
 ## Features
 
 - Single-request feedback loop — AI pauses and waits for user input without consuming extra requests
-- Always-on-top native Win32 feedback window
+- Always-on-top native Win32 feedback window that **does not steal focus** from the active application
+- **Image paste** — paste screenshots or copied images from the clipboard directly into the feedback window; images are saved as PNG and sent to the AI via MCP as base64-encoded content
 - Drag & drop files onto the window or paste copied files to insert their paths
+- **Window reuse** — when a new feedback request arrives while the window is already open, the existing window is reused (summary updated, taskbar flashes) instead of opening a duplicate
 - Auto-reply rules for unattended operation (oneshot and loop modes)
 - Window management — empty windows close when no longer needed; windows with user input stay open to avoid losing text
 - All interactions (AI request / user reply / auto-reply) logged with timestamps to `feedback_log.txt`
@@ -87,9 +89,11 @@ Start a chat. After the AI responds, a feedback window pops up with the AI's wor
 
 1. AI calls `interactive_feedback` with a work summary.
 2. If there's an auto-reply rule with timeout `0`, the server returns it immediately — no GUI.
-3. Otherwise, the server launches `feedback-gui.exe`, passing the summary via command-line arguments. The GUI shows the summary (read-only) and a text input box, always on top.
+3. Otherwise, the server checks if a GUI window is already open:
+   - **If yes** — it sends the new summary to the existing window via `WM_COPYDATA`, and the window updates in place (taskbar flashes to notify the user).
+   - **If no** — it launches a new `feedback-gui.exe` with `SW_SHOWNOACTIVATE` so it appears on top without stealing keyboard focus.
 4. The server waits for one of three events:
-   - **User submits** — GUI writes feedback to a temp file and exits. The server reads it and returns the feedback to the AI. Non-empty feedback resets the auto-reply loop index.
+   - **User submits** — GUI writes feedback to a temp file (and image paths to a `.images` sidecar file if screenshots were pasted). The server reads both, base64-encodes any images, and returns everything to the AI as MCP content. Non-empty feedback resets the auto-reply loop index.
    - **Auto-reply timeout** — the auto-reply text is returned to the AI. The GUI window is handled as described in [Window Behavior](#window-behavior).
    - **Request cancelled by Cursor** — no result is returned. The window title changes to `[Cancelled]`.
 5. The server's main loop uses `WaitForMultipleObjects` to watch stdin data, config file changes, GUI process exit, and auto-reply timeout simultaneously, so it can respond to Cursor messages at any time while waiting for feedback.
@@ -134,11 +138,11 @@ When `timeout_seconds` is `0`, the auto-reply fires immediately and the GUI is n
 ## Architecture
 
 ```
-Cursor  ←— stdio JSON-RPC —→  feedback-server.exe  ←— args / temp file —→  feedback-gui.exe
-                                                    ←— Win32 messages ——→
+Cursor  ←— stdio JSON-RPC —→  feedback-server.exe  ←— args / temp file / .images —→  feedback-gui.exe
+                                                    ←— Win32 messages (WM_COPYDATA) —→
 ```
 
-Two processes: the MCP server communicates with Cursor via stdin/stdout using JSON-RPC 2.0 (one JSON per line). The GUI is a separate Win32 process — this separation is necessary because Cursor occupies the server's stdin/stdout. Communication between them: command-line arguments (at launch), Windows messages (at runtime, for timeout/cancel notifications), and a temp file (for returning feedback).
+Two processes: the MCP server communicates with Cursor via stdin/stdout using JSON-RPC 2.0 (one JSON per line). The GUI is a separate Win32 process — this separation is necessary because Cursor occupies the server's stdin/stdout. Communication between them: command-line arguments (at launch), `WM_COPYDATA` (to update summary for window reuse), Windows messages (for timeout/cancel notifications), a temp file (for returning text feedback), and a `.images` sidecar file (for returning pasted image paths).
 
 ## Build from Source
 
@@ -147,6 +151,10 @@ C++17, CMake 3.10+. Only dependency is nlohmann/json (bundled as `json.hpp`).
 ```bash
 mkdir build && cd build && cmake .. && cmake --build .
 ```
+
+## Acknowledgments
+
+Based on the original [Interactive Feedback MCP](https://github.com/junanchn/interactive-feedback-mcp) by [junanchn](https://github.com/junanchn).
 
 ## License
 
