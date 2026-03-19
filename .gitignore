@@ -1,4 +1,3 @@
 .cursor/
 build/
-*.exe
 feedback_log.txt
